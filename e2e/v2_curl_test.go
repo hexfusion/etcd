@@ -127,7 +127,7 @@ type cURLReq struct {
 
 	value    string
 	expected string
-	header   string
+	header   []string
 }
 
 // cURLPrefixArgs builds the beginning of a curl command for a given key
@@ -136,6 +136,7 @@ func cURLPrefixArgs(clus *etcdProcessCluster, method string, req cURLReq) []stri
 	var (
 		cmdArgs = []string{"curl"}
 		acurl   = clus.procs[rand.Intn(clus.cfg.clusterSize)].cfg.acurl
+		header  []string
 	)
 	if req.isTLS {
 		if clus.cfg.clientTLS != clientTLSAndNonTLS {
@@ -156,9 +157,11 @@ func cURLPrefixArgs(clus *etcdProcessCluster, method string, req cURLReq) []stri
 	if req.timeout != 0 {
 		cmdArgs = append(cmdArgs, "-m", fmt.Sprintf("%d", req.timeout))
 	}
-
-	if req.header != "" {
-		cmdArgs = append(cmdArgs, "-H", req.header)
+	header = req.header
+	if len(header) != 0 {
+		for _, h := range header {
+			cmdArgs = append(cmdArgs, "-H", h)
+		}
 	}
 
 	switch method {
