@@ -165,9 +165,10 @@ type Config struct {
 	// See https://go.etcd.io/etcd/issues/9333 for more detail.
 	InitialElectionTickAdvance bool `json:"initial-election-tick-advance"`
 
-	QuotaBackendBytes int64 `json:"quota-backend-bytes"`
-	MaxTxnOps         uint  `json:"max-txn-ops"`
-	MaxRequestBytes   uint  `json:"max-request-bytes"`
+	QuotaBackendBytes     int64 `json:"quota-backend-bytes"`
+	QuotaBackendThreshold uint  `json:"quota-backend-threshold"`
+	MaxTxnOps             uint  `json:"max-txn-ops"`
+	MaxRequestBytes       uint  `json:"max-request-bytes"`
 
 	LPUrls, LCUrls []url.URL
 	APUrls, ACUrls []url.URL

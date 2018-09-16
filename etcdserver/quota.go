@@ -18,18 +18,21 @@ import (
 	"sync"
 
 	pb "go.etcd.io/etcd/etcdserver/etcdserverpb"
+	"go.etcd.io/etcd/mvcc"
 
 	humanize "github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 )
 
 const (
-	// DefaultQuotaBytes is the number of bytes the backend Size may
+	// DefaultQuotaBytes is the number of bytes the backend size may
 	// consume before exceeding the space quota.
 	DefaultQuotaBytes = int64(2 * 1024 * 1024 * 1024) // 2GB
 	// MaxQuotaBytes is the maximum number of bytes suggested for a backend
 	// quota. A larger quota may lead to degraded performance.
 	MaxQuotaBytes = int64(8 * 1024 * 1024 * 1024) // 8GB
+	// DefaultQuoteThreshold is the percentage of
+	DefaultQuotaThreshold
 )
 
 // Quota represents an arbitrary quota against arbitrary requests. Each request
@@ -42,6 +45,8 @@ type Quota interface {
 	Cost(req interface{}) int
 	// Remaining is the amount of charge left for the quota.
 	Remaining() int64
+	// Threshold returns true if given request is below the quota threshold.
+	Threshold(req interface{}) bool
 }
 
 type passthroughQuota struct{}
@@ -49,10 +54,12 @@ type passthroughQuota struct{}
 func (*passthroughQuota) Available(interface{}) bool { return true }
 func (*passthroughQuota) Cost(interface{}) int       { return 0 }
 func (*passthroughQuota) Remaining() int64           { return 1 }
+func (*passthroughQuota) Threshold() int64           { return 1 }
 
 type backendQuota struct {
-	s               *EtcdServer
-	maxBackendBytes int64
+	s                *EtcdServer
+	maxBackendBytes  int64
+	warnBackendBytes int64
 }
 
 const (
@@ -83,6 +90,7 @@ func NewBackendQuota(s *EtcdServer, name string) Quota {
 					"disabled backend quota",
 					zap.String("quota-name", name),
 					zap.Int64("quota-size-bytes", s.Cfg.QuotaBackendBytes),
+					// TODO add a note here
 				)
 			} else {
 				plog.Warningf("disabling backend quota")
@@ -100,6 +108,7 @@ func NewBackendQuota(s *EtcdServer, name string) Quota {
 					zap.String("quota-name", name),
 					zap.Int64("quota-size-bytes", DefaultQuotaBytes),
 					zap.String("quota-size", DefaultQuotaSize),
+					// TODO add a note here
 				)
 			}
 		})
@@ -137,6 +146,10 @@ func NewBackendQuota(s *EtcdServer, name string) Quota {
 func (b *backendQuota) Available(v interface{}) bool {
 	// TODO: maybe optimize backend.Size()
 	return b.s.Backend().Size()+int64(b.Cost(v)) < b.maxBackendBytes
+}
+
+func (b *backendQuota) Threshold(v interface{}) bool {
+	return b.s.Backend().Size()+int64(b.Cost(v)) < b.thresholdBackendBytes
 }
 
 func (b *backendQuota) Cost(v interface{}) int {
@@ -179,4 +192,38 @@ func costTxn(r *pb.TxnRequest) int {
 
 func (b *backendQuota) Remaining() int64 {
 	return b.maxBackendBytes - b.s.Backend().Size()
+}
+
+type applierV3WarnSpace struct {
+	applierV3
+}
+
+func newApplierV3WarnSpace(a applierV3) *applierV3WarnSpace { return &applierV3WarnSpace{a} }
+
+func (a *applierV3WarnSpace) Put(txn mvcc.TxnWrite, p *pb.PutRequest) (*pb.PutResponse, error) {
+	return nil, ErrWarnSpace
+}
+
+func (a *applierV3WarnSpace) Range(txn mvcc.TxnRead, p *pb.RangeRequest) (*pb.RangeResponse, error) {
+	return nil, ErrWarnSpace
+}
+
+func (a *applierV3WarnSpace) DeleteRange(txn mvcc.TxnWrite, p *pb.DeleteRangeRequest) (*pb.DeleteRangeResponse, error) {
+	return nil, ErrWarnSpace
+}
+
+func (a *applierV3WarnSpace) Txn(rt *pb.TxnRequest) (*pb.TxnResponse, error) {
+	return nil, ErrWarnSpace
+}
+
+func (a *applierV3WarnSpace) Compaction(compaction *pb.CompactionRequest) (*pb.CompactionResponse, <-chan struct{}, error) {
+	return nil, nil, ErrWarnSpace
+}
+
+func (a *applierV3WarnSpace) LeaseGrant(lc *pb.LeaseGrantRequest) (*pb.LeaseGrantResponse, error) {
+	return nil, ErrWarnSpace
+}
+
+func (a *applierV3WarnSpace) LeaseRevoke(lc *pb.LeaseRevokeRequest) (*pb.LeaseRevokeResponse, error) {
+	return nil, ErrWarnSpace
 }

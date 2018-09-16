@@ -625,6 +625,9 @@ func (a *applierV3backend) Alarm(ar *pb.AlarmRequest) (*pb.AlarmResponse, error)
 			a.s.applyV3 = newApplierV3Corrupt(a)
 		case pb.AlarmType_NOSPACE:
 			a.s.applyV3 = newApplierV3Capped(a)
+		case pb.AlarmType_WARNSPACE:
+			a.s.applyV3 = newApplierV3WarnSpace(a)
+
 		default:
 			if lg != nil {
 				lg.Warn("unimplemented alarm activation", zap.String("alarm", fmt.Sprintf("%+v", m)))
@@ -644,7 +647,7 @@ func (a *applierV3backend) Alarm(ar *pb.AlarmRequest) (*pb.AlarmResponse, error)
 		}
 
 		switch m.Alarm {
-		case pb.AlarmType_NOSPACE, pb.AlarmType_CORRUPT:
+		case pb.AlarmType_NOSPACE, pb.AlarmType_CORRUPT, pb.AlarmType_WARNSPACE:
 			// TODO: check kv hash before deactivating CORRUPT?
 			if lg != nil {
 				lg.Warn("alarm disarmed", zap.String("alarm", m.Alarm.String()), zap.String("from", types.ID(m.MemberID).String()))

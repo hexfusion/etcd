@@ -37,6 +37,30 @@ type quotaAlarmer struct {
 // check whether request satisfies the quota. If there is not enough space,
 // ignore request and raise the free space alarm.
 func (qa *quotaAlarmer) check(ctx context.Context, r interface{}) error {
+	if err = checkAvailable(r); err != nil {
+		return err
+	}
+	if err = checkTreshold(r); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func checkAvailable(r interface{}) error {
+	if qa.q.Available(r) {
+		return nil
+	}
+	req := &pb.AlarmRequest{
+		MemberID: uint64(qa.id),
+		Action:   pb.AlarmRequest_ACTIVATE,
+		Alarm:    pb.AlarmType_NOSPACE,
+	}
+	qa.a.Alarm(ctx, req)
+	return rpctypes.ErrGRPCNoSpace
+}
+
+func checkTreshold(r interface{}) error {
 	if qa.q.Available(r) {
 		return nil
 	}

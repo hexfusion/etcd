@@ -32,6 +32,7 @@ var (
 	ErrNotLeader                  = errors.New("etcdserver: not leader")
 	ErrRequestTooLarge            = errors.New("etcdserver: request is too large")
 	ErrNoSpace                    = errors.New("etcdserver: no space")
+	ErrWarnSpace                  = errors.New("etcdserver: low space warning")
 	ErrTooManyRequests            = errors.New("etcdserver: too many requests")
 	ErrUnhealthy                  = errors.New("etcdserver: unhealthy cluster")
 	ErrKeyNotFound                = errors.New("etcdserver: key not found")
