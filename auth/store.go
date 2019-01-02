@@ -1156,6 +1156,17 @@ func (as *authStore) AuthInfoFromTLS(ctx context.Context) (ai *AuthInfo) {
 	if !ok || peer == nil || peer.AuthInfo == nil {
 		return nil
 	}
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil
+	}
+
+	// gRPC-gateway proxy request to etcd server includes Grpcgateway-Accept
+	// header. The proxy uses etcd client server certificate. If the certificate
+	// has a CommonName we should never use this for authentication.
+	if gw, _ := md["grpcgateway-accept"]; len(gw) > 0 {
+		return nil
+	}
 
 	tlsInfo := peer.AuthInfo.(credentials.TLSInfo)
 	for _, chains := range tlsInfo.State.VerifiedChains {
