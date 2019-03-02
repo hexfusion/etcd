@@ -22,7 +22,7 @@ DIRS="./wal/walpb ./etcdserver/etcdserverpb ./etcdserver/api/snap/snappb ./raft/
 export GO111MODULE=off
 
 # exact version of packages to build
-GOGO_PROTO_SHA="636bf0302bc95575d69441b25a2603156ffdddf1"
+GOGO_PROTO_SHA="ba06b47c162d49f2af050fb4c75bcbc86a159d5c"
 GRPC_GATEWAY_SHA="7d1918f9e926dafd000b917eb2caccbcf64477df"
 SCHWAG_SHA="b7d0fc9aadaaae3d61aaadfc12e4a2f945514912"
 
