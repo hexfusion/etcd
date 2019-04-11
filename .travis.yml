@@ -42,22 +42,26 @@ script:
       linux-amd64-integration)
         docker run --rm \
           --volume=`pwd`:/go/src/github.com/coreos/etcd gcr.io/etcd-development/etcd-test:go${TRAVIS_GO_VERSION} \
-          /bin/bash -c "cd /go/src/github.com/coreos/etcd && GOARCH=amd64 PASSES='integration' ./test"
+          --workdir=/go/src/github.com/coreos/etcd \
+          /bin/bash -c "GOARCH=amd64 PASSES='integration' ./test"
         ;;
       linux-amd64-functional)
         docker run --rm \
           --volume=`pwd`:/go/src/github.com/coreos/etcd gcr.io/etcd-development/etcd-test:go${TRAVIS_GO_VERSION} \
-          /bin/bash -c "cd /go/src/github.com/coreos/etcd && ./build && GOARCH=amd64 PASSES='functional' ./test"
+          --workdir=/go/src/github.com/coreos/etcd \
+          /bin/bash -c "./build && GOARCH=amd64 PASSES='functional' ./test"
         ;;
       linux-amd64-unit)
         docker run --rm \
           --volume=`pwd`:/go/src/github.com/coreos/etcd gcr.io/etcd-development/etcd-test:go${TRAVIS_GO_VERSION} \
-          /bin/bash -c "cd /go/src/github.com/coreos/etcd && GOARCH=amd64 PASSES='unit' ./test"
+          --workdir=/go/src/github.com/coreos/etcd \
+          /bin/bash -c "GOARCH=amd64 PASSES='unit' ./test"
         ;;
       all-build)
         docker run --rm \
           --volume=`pwd`:/go/src/github.com/coreos/etcd gcr.io/etcd-development/etcd-test:go${TRAVIS_GO_VERSION} \
-          /bin/bash -c "cd /go/src/github.com/coreos/etcd && GOARCH=amd64 PASSES='build' ./test \
+          --workdir=/go/src/github.com/coreos/etcd \
+          /bin/bash -c "GOARCH=amd64 PASSES='build' ./test \
             && GOARCH=386 PASSES='build' ./test \
             && GO_BUILD_FLAGS='-v' GOOS=darwin GOARCH=amd64 ./build \
             && GO_BUILD_FLAGS='-v' GOOS=windows GOARCH=amd64 ./build \
