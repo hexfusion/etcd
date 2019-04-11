@@ -42,7 +42,7 @@ script:
       linux-amd64-integration)
         docker run --rm \
           --volume=`pwd`:/go/src/github.com/coreos/etcd gcr.io/etcd-development/etcd-test:go${TRAVIS_GO_VERSION} \
-          /bin/bash -c "cd /go/src/github.com/ && tree && GOARCH=amd64 PASSES='integration' ./test"
+          /bin/bash -c "cd /go/src/github.com/ && ls && GOARCH=amd64 PASSES='integration' ./test"
         ;;
       linux-amd64-functional)
         docker run --rm \
