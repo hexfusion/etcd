@@ -22,8 +22,9 @@ import (
 	"github.com/coreos/etcd/etcdserver/api/v3rpc"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	pb "github.com/coreos/etcd/etcdserver/etcdserverpb"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -80,7 +81,7 @@ func (wp *watchProxy) Watch(stream pb.Watch_WatchServer) (err error) {
 		wp.mu.Unlock()
 		select {
 		case <-wp.leader.disconnectNotify():
-			return grpc.ErrClientConnClosing
+			return status.Error(codes.Canceled, "the client connection is closing")
 		default:
 			return wp.ctx.Err()
 		}
@@ -153,7 +154,7 @@ func (wp *watchProxy) Watch(stream pb.Watch_WatchServer) (err error) {
 	case <-lostLeaderC:
 		return rpctypes.ErrNoLeader
 	case <-wp.leader.disconnectNotify():
-		return grpc.ErrClientConnClosing
+		return status.Error(codes.Canceled, "the client connection is closing")
 	default:
 		return wps.ctx.Err()
 	}

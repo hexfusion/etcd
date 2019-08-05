@@ -24,6 +24,8 @@ import (
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	pb "github.com/coreos/etcd/etcdserver/etcdserverpb"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -214,7 +216,7 @@ func (lp *leaseProxy) LeaseKeepAlive(stream pb.Lease_LeaseKeepAliveServer) error
 	case <-lostLeaderC:
 		return rpctypes.ErrNoLeader
 	case <-lp.leader.disconnectNotify():
-		return grpc.ErrClientConnClosing
+		return status.Error(codes.Canceled, "the client connection is closing")
 	default:
 		if err != nil {
 			return err

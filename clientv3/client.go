@@ -596,11 +596,3 @@ func IsConnCanceled(err error) bool {
 	// <= gRPC v1.7.x returns 'errors.New("grpc: the client connection is closing")'
 	return strings.Contains(err.Error(), "grpc: the client connection is closing")
 }
-
-func getHost(ep string) string {
-	url, uerr := url.Parse(ep)
-	if uerr != nil || !strings.Contains(ep, "://") {
-		return ep
-	}
-	return url.Host
-}
