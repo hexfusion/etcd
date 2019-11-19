@@ -193,12 +193,11 @@ func (ws *watchServer) Watch(stream pb.Watch_WatchServer) (err error) {
 	case err = <-errc:
 		close(sws.ctrlStream)
 
-	case <-stream.Context().Done():
-		err = stream.Context().Err()
-		// the only server-side cancellation is noleader for now.
-		if err == context.Canceled {
-			err = rpctypes.ErrGRPCNoLeader
-		}
+//	case <-stream.Context().Done():
+//		err = stream.Context().Err()
+//		if err == context.Canceled {
+//			err = rpctypes.ErrGRPCWatchCanceled
+//		}
 	}
 
 	sws.close()

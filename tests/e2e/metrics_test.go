@@ -15,8 +15,10 @@
 package e2e
 
 import (
+	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"go.etcd.io/etcd/version"
 )
@@ -49,6 +51,7 @@ func metricsTest(cx ctlCtx) {
 		{"/metrics", fmt.Sprintf("etcd_mvcc_delete_total 3")},
 		{"/metrics", fmt.Sprintf(`etcd_server_version{server_version="%s"} 1`, version.Version)},
 		{"/metrics", fmt.Sprintf(`etcd_cluster_version{cluster_version="%s"} 1`, version.Cluster(version.Version))},
+		{"/metrics", fmt.Sprintf(`grpc_server_handled_total{grpc_code="Canceled",grpc_method="Watch",grpc_service="etcdserverpb.Watch",grpc_type="bidi_stream"} 1`)},
 		{"/health", `{"health":"true"}`},
 	} {
 		i++
@@ -58,6 +61,11 @@ func metricsTest(cx ctlCtx) {
 		if err := ctlV3Del(cx, []string{fmt.Sprintf("%d", i)}, 1); err != nil {
 			cx.t.Fatal(err)
 		}
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		if err := ctlV3Watch(ctx, []string{"--rev", "1"}, "foo"...); err != nil {
+			 cx.t.Fatal(err)
+		}
+		cancel()
 
 		if err := cURLGet(cx.epc, cURLReq{endpoint: test.endpoint, expected: test.expected, metricsURLScheme: cx.cfg.metricsURLScheme}); err != nil {
 			cx.t.Fatalf("failed get with curl (%v)", err)
