@@ -63,7 +63,7 @@ func metricsTest(cx ctlCtx) {
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		if err := ctlV3Watch(ctx, []string{"--rev", "1"}, "foo"...); err != nil {
-			 cx.t.Fatal(err)
+			cx.t.Fatal(err)
 		}
 		cancel()
 
