@@ -15,7 +15,6 @@
 package v3rpc
 
 import (
-	"context"
 	"io"
 	"math/rand"
 	"sync"
