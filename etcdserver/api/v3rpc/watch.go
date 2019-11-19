@@ -15,6 +15,7 @@
 package v3rpc
 
 import (
+	"context"
 	"io"
 	"math/rand"
 	"sync"
@@ -191,6 +192,11 @@ func (ws *watchServer) Watch(stream pb.Watch_WatchServer) (err error) {
 	select {
 	case err = <-errc:
 		close(sws.ctrlStream)
+	case <-stream.Context().Done():
+		err = stream.Context().Err()
+		if err == context.Canceled {
+			err = rpctypes.ErrGRPCWatchCanceled
+		}
 	}
 
 	sws.close()
