@@ -59,7 +59,7 @@ func metricsTest(cx ctlCtx) {
 		if err := ctlV3Del(cx, []string{fmt.Sprintf("%d", i)}, 1); err != nil {
 			cx.t.Fatal(err)
 		}
-		if err := ctlV3Watch(cx, []string{"--rev", "1"},  []kvExec{{key: "key1", val: "val1"}}...); err != nil {
+		if err := ctlV3Watch(cx, []string{"--rev", "1"}, []kvExec{{key: "key1", val: "val1"}}...); err != nil {
 			cx.t.Fatal(err)
 		}
 		if err := cURLGet(cx.epc, cURLReq{endpoint: test.endpoint, expected: test.expected, metricsURLScheme: cx.cfg.metricsURLScheme}); err != nil {

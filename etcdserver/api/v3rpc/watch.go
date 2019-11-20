@@ -200,12 +200,11 @@ func (ws *watchServer) Watch(stream pb.Watch_WatchServer) (err error) {
 		if err == context.Canceled {
 			ev, ok := status.FromError(err)
 			if !ok {
-				return err
+				return rpctypes.ErrGRPCNoLeader
 			}
 			if ev.Code() == codes.Unknown {
 				return rpctypes.ErrGRPCWatchCanceled
 			}
-			err = rpctypes.ErrGRPCNoLeader
 		}
 	}
 	return err
