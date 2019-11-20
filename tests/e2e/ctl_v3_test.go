@@ -85,7 +85,6 @@ func dialWithSchemeTest(cx ctlCtx) {
 		cx.t.Fatal(err)
 	}
 }
-
 type ctlCtx struct {
 	t                 *testing.T
 	apiPrefix         string

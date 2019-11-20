@@ -15,10 +15,8 @@
 package e2e
 
 import (
-	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"go.etcd.io/etcd/version"
 )
@@ -61,12 +59,9 @@ func metricsTest(cx ctlCtx) {
 		if err := ctlV3Del(cx, []string{fmt.Sprintf("%d", i)}, 1); err != nil {
 			cx.t.Fatal(err)
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		if err := ctlV3Watch(ctx, []string{"--rev", "1"}, "foo"...); err != nil {
+		if err := ctlV3Watch(cx, []string{"--rev", "1"},  []kvExec{{key: "key1", val: "val1"}}...); err != nil {
 			cx.t.Fatal(err)
 		}
-		cancel()
-
 		if err := cURLGet(cx.epc, cURLReq{endpoint: test.endpoint, expected: test.expected, metricsURLScheme: cx.cfg.metricsURLScheme}); err != nil {
 			cx.t.Fatalf("failed get with curl (%v)", err)
 		}

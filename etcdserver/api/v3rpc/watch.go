@@ -16,6 +16,8 @@ package v3rpc
 
 import (
 	"context"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"io"
 	"math/rand"
 	"sync"
@@ -189,17 +191,23 @@ func (ws *watchServer) Watch(stream pb.Watch_WatchServer) (err error) {
 		}
 	}()
 
+	defer sws.close()
 	select {
 	case err = <-errc:
 		close(sws.ctrlStream)
 	case <-stream.Context().Done():
 		err = stream.Context().Err()
 		if err == context.Canceled {
-			err = rpctypes.ErrGRPCWatchCanceled
+			ev, ok := status.FromError(err)
+			if !ok {
+				return err
+			}
+			if ev.Code() == codes.Unknown {
+				return rpctypes.ErrGRPCWatchCanceled
+			}
+			err = rpctypes.ErrGRPCNoLeader
 		}
 	}
-
-	sws.close()
 	return err
 }
 
