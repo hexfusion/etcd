@@ -51,3 +51,15 @@ func GetCipherSuite(s string) (uint16, bool) {
 	v, ok := cipherSuites[s]
 	return v, ok
 }
+
+// WhitelistCipherSuites returns a list of valid ciphers for use with etcd.
+func WhitelistCipherSuites(cipherSuites []string) []string {
+	whitelist := []string{}
+	for _, cipher := range cipherSuites {
+		_, ok := GetCipherSuite(cipher)
+		if ok {
+			whitelist = append(whitelist, cipher)
+		}
+	}
+	return whitelist
+}
