@@ -138,6 +138,9 @@ type ServerConfig struct {
 	// PreVote is true to enable Raft Pre-Vote.
 	PreVote bool
 
+	// SocketOpts are socket options passed to listeners
+	SocketOpts transport.SocketOpts
+
 	// Logger logs server-side operations.
 	// If not nil, it disables "capnslog" and uses the given logger.
 	Logger *zap.Logger

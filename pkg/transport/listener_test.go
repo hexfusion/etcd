@@ -18,14 +18,13 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"go.uber.org/zap"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
 	"testing"
 	"time"
-
-	"go.uber.org/zap"
 )
 
 func createSelfCert(hosts ...string) (*TLSInfo, func(), error) {
@@ -59,6 +58,54 @@ func TestNewListenerTLSInfo(t *testing.T) {
 	}
 	defer del()
 	testNewListenerTLSInfoAccept(t, *tlsInfo)
+}
+
+func TestNewListenerWithSocketOpts(t *testing.T) {
+	tlsInfo, del, err := createSelfCert()
+	if err != nil {
+		t.Fatalf("unable to create cert: %v", err)
+	}
+	defer del()
+	tests := map[string]struct {
+		socketOpts  *SocketOpts
+		expectedErr bool
+	}{
+		"default": {
+			socketOpts:  nil,
+			expectedErr: true,
+		},
+		"reuse address": {
+			socketOpts:  &SocketOpts{ReuseAddress: true},
+			expectedErr: true,
+		},
+		"reuse address and reuse port": {
+			socketOpts:  &SocketOpts{ReuseAddress: true, ReusePort: true},
+			expectedErr: false,
+		},
+		"reuse port": {
+			socketOpts:  &SocketOpts{ReusePort: true},
+			expectedErr: false,
+		},
+	}
+	for testName, test := range tests {
+		t.Run(testName, func(t *testing.T) {
+			ln, err := NewListenerWithSocketOpts("127.0.0.1:0", "https", tlsInfo, test.socketOpts)
+			if err != nil {
+				t.Fatalf("unexpected NewListenerWithSocketOpts error: %v", err)
+			}
+			defer ln.Close()
+			ln2, err := NewListenerWithSocketOpts(ln.Addr().String(), "https", tlsInfo, test.socketOpts)
+			if test.expectedErr && err == nil {
+				t.Fatalf("expected error")
+			}
+			if !test.expectedErr && err != nil {
+				t.Fatalf("unexpected NewListenerWithSocketOpts error: %v", err)
+			}
+			if ln2 != nil {
+				ln2.Close()
+			}
+		})
+	}
 }
 
 func testNewListenerTLSInfoAccept(t *testing.T, tlsInfo TLSInfo) {
@@ -399,5 +446,23 @@ func TestIsClosedConnError(t *testing.T) {
 	_, err = l.Accept()
 	if !IsClosedConnError(err) {
 		t.Fatalf("expect true, got false (%v)", err)
+	}
+}
+
+func TestSocktOptsEmpty(t *testing.T) {
+	tests := []struct {
+		sopts SocketOpts
+		want  bool
+	}{
+		{SocketOpts{}, true},
+		{SocketOpts{ReuseAddress: true, ReusePort: false}, false},
+		{SocketOpts{ReusePort: true}, false},
+	}
+
+	for i, tt := range tests {
+		got := tt.sopts.Empty()
+		if tt.want != got {
+			t.Errorf("#%d: result of Empty() incorrect: want=%t got=%t", i, tt.want, got)
+		}
 	}
 }

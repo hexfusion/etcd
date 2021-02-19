@@ -85,6 +85,10 @@ Member:
     Frequency duration of server-to-client ping to check if a connection is alive (0 to disable).
   --grpc-keepalive-timeout '20s'
     Additional duration of wait before closing a non-responsive connection (0 to disable).
+  --socket-reuse-address 'false
+    Enables socket option SO_REUSEADDR
+  --socket-reuse-port 'false
+    Enables socket option SO_REUSEPORT
 
 Clustering:
   --initial-advertise-peer-urls 'http://localhost:2380'

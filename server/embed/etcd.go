@@ -110,6 +110,12 @@ func StartEtcd(inCfg *Config) (e *Etcd, err error) {
 		e = nil
 	}()
 
+	cfg.logger.Info(
+		"configuring socket options",
+		zap.Bool("reuse-address", cfg.SocketOpts.ReuseAddress),
+		zap.Bool("reuse-port", cfg.SocketOpts.ReusePort),
+	)
+
 	e.cfg.logger.Info(
 		"configuring peer listeners",
 		zap.Strings("listen-peer-urls", e.cfg.getLPURLs()),
@@ -191,6 +197,7 @@ func StartEtcd(inCfg *Config) (e *Etcd, err error) {
 		InitialCorruptCheck:         cfg.ExperimentalInitialCorruptCheck,
 		CorruptCheckTime:            cfg.ExperimentalCorruptCheckTime,
 		PreVote:                     cfg.PreVote,
+		SocketOpts:                  cfg.SocketOpts,
 		Logger:                      cfg.logger,
 		LoggerConfig:                cfg.loggerConfig,
 		LoggerCore:                  cfg.loggerCore,
@@ -418,6 +425,7 @@ func configurePeerListeners(cfg *Config) (peers []*peerListener, err error) {
 	if err = updateCipherSuites(&cfg.PeerTLSInfo, cfg.CipherSuites); err != nil {
 		return nil, err
 	}
+
 	if err = cfg.PeerSelfCert(); err != nil {
 		cfg.logger.Fatal("failed to get peer self-signed certs", zap.Error(err))
 	}
@@ -458,7 +466,7 @@ func configurePeerListeners(cfg *Config) (peers []*peerListener, err error) {
 			}
 		}
 		peers[i] = &peerListener{close: func(context.Context) error { return nil }}
-		peers[i].Listener, err = rafthttp.NewListener(u, &cfg.PeerTLSInfo)
+		peers[i].Listener, err = rafthttp.NewListenerWithSocketOpts(u, &cfg.PeerTLSInfo, &cfg.SocketOpts)
 		if err != nil {
 			return nil, err
 		}
@@ -565,7 +573,7 @@ func configureClientListeners(cfg *Config) (sctxs map[string]*serveCtx, err erro
 			continue
 		}
 
-		if sctx.l, err = net.Listen(network, addr); err != nil {
+		if sctx.l, err = transport.NewListenerWithSocketOpts(addr, u.Scheme, nil, &cfg.SocketOpts); err != nil {
 			return nil, err
 		}
 		// net.Listener will rewrite ipv4 0.0.0.0 to ipv6 [::], breaking
@@ -658,6 +666,7 @@ func (e *Etcd) serveClients() (err error) {
 	// start client servers in each goroutine
 	for _, sctx := range e.sctxs {
 		go func(s *serveCtx) {
+			// here
 			e.errHandler(s.serve(e.Server, &e.cfg.ClientTLSInfo, h, e.errHandler, gopts...))
 		}(sctx)
 	}
@@ -678,7 +687,7 @@ func (e *Etcd) serveMetrics() (err error) {
 			if murl.Scheme == "http" {
 				tlsInfo = nil
 			}
-			ml, err := transport.NewListener(murl.Host, murl.Scheme, tlsInfo)
+			ml, err := transport.NewListenerWithSocketOpts(murl.Host, murl.Scheme, tlsInfo, &e.cfg.SocketOpts)
 			if err != nil {
 				return err
 			}
