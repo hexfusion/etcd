@@ -54,7 +54,7 @@ const (
 // NewClientHandler generates a muxed http.Handler with the given parameters to serve etcd client requests.
 func NewClientHandler(lg *zap.Logger, server etcdserver.ServerPeer, timeout time.Duration) http.Handler {
 	mux := http.NewServeMux()
-	etcdhttp.HandleBasic(lg, mux, server)
+	etcdhttp.HandleBasic(mux, server)
 	handleV2(lg, mux, server, timeout)
 	return requestLogger(lg, mux)
 }
